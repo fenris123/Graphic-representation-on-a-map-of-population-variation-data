@@ -1,0 +1,452 @@
+---
+title: "Analisis del incremento de poblacion por provincias, años 2001-2021"
+author: "Guillermo"
+date: "2024-04-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+### PASO 0
+
+PARTIMOS DE LOS DATOS OBTENIDOS EN LA LIMPIEZA DE DATOS. (https://github.com/fenris123/population-data-cleaning-using-R)
+
+INSTALACION DE LIBRERIAS NECESARIAS
+
+DESACTIVACION DE LA NOTACION CIENTIFICA EN LOS EJES POR DEFECTO.
+
+
+
+```{r PASO 0}
+
+### install.packages("ggplot2")
+### install.packages("sf")
+
+library(ggplot2)
+library(sf)
+
+options(scipen = 999)  
+
+```
+
+
+<br><br><br>
+
+### PASO 1
+
+CARGAR DATOS DEL EJERCICIO ANTERIOR (ver readme)
+
+Ademas vamos a crear una nueva columna que nos muestre el incremento o decrecimiento de la población en ese tiempo.
+Adicionalmente podria hacerse con los datos desagregados por sexo tambien.
+
+
+```{r PASO 1}
+
+tabla_datos <- read.csv("C:/espacior/tabla_combinada.csv")
+
+tabla_datos$IncrementoPOB <- tabla_datos$POB21 - tabla_datos$POB01
+
+```
+
+
+<br><br><br>
+
+### PASO 2
+
+Vamos a hacer un analisis inicial de los datos.  
+
+
+```{r PASO 2}
+
+summary (tabla_datos)
+
+```
+
+<br><br><br>
+
+Como nos interesa sobre todo la variacion de la población, vamos a hacer una representacion visual de la misma.
+
+```{r}
+
+boxplot(tabla_datos$IncrementoPOB, ylab = "Variación de Población")
+
+```
+
+<br><br><br>
+
+En este analisis nos encontramos con que la función boxplot considera demasiados datos como outliers.  Vamos a comprobarlo haciendo que elimine lo que considera outlier.
+
+
+```{r}
+
+boxplot(tabla_datos$IncrementoPOB, ylab = "Variación de Población", col = "skyblue", border = "black", outline = FALSE)
+
+```
+<br><br><br>
+
+
+Notese la enorme diferencia en el eje Y.  Esto nos debe llevar a hacer un diagrama de densidad o un histograma
+
+
+```{r}
+
+hist(tabla_datos$IncrementoPOB, col = "skyblue", border = "black", xlab = "Variación de Población", ylab = "Frecuencia", main = "Histograma de Variación de Población")
+
+```
+<br><br><br>
+
+
+
+Repetimos para la densidad:
+
+```{r}
+
+densidad <- density(tabla_datos$IncrementoPOB)
+
+plot(densidad, col = "blue", main = "Diagrama de Densidad de Variación de Población")
+```
+<br><br><br>
+
+Con todo esto, ilustramos lo que ya nos decia el analisis inicial hecho con "summary":  La inmensa mayoria de los municipios tienen una variacion de muy pocos cientos de personas arriba o abajo.  
+
+Mas adelante veremos que porcentaje es ese del total (No es lo mismo 100 personas mas para un pueblo de 1000 habitantes que para Madrid) pero antes vamos a ver exactamente que 10 Municipios crecieron mas, y que 10 municipios crecieron menos.
+
+
+Para ello crearemos una nueva tabla, solo con nombre, provincia, y variacion de poblacion.  La ordenaremos por su variacion de poblacion, y veremos el cambio de población de los 10 que mas ganan.
+
+
+```{r}
+
+tabla_corta <- tabla_datos[, c("NOMBRE", "PROVINCIA", "IncrementoPOB")]
+tabla_corta <- tabla_corta[order(-tabla_datos$IncrementoPOB), ]
+head(tabla_corta, 10)
+
+```
+
+
+<br><br><br>
+
+
+Repetimos para los 10 que menos ganan (o mas pierden).
+
+
+```{r}
+
+
+tail(tabla_corta, 10)
+
+```
+
+
+<br><br><br>
+
+### PASO 3
+
+Vamos a estudiar la variacion porcentual de la poblacion en cada municipio.
+
+Muchos de los pasos seran similares a los realizados anteriormente, en esos casos no se explicara todo.
+
+Lo primero  sera crear una tabla con la variacion porcentual.
+
+```{r PASO 3}
+
+
+var_porcentual <- ((tabla_datos$POB21 - tabla_datos$POB01) / tabla_datos$POB01) * 100
+
+tabla_datos$var_porcentual <- round(var_porcentual,1)
+
+
+```
+
+
+<br><br><br>
+
+Ahora haremos un "summary" solo de la nueva columna (las demas ya las conocemos)
+
+```{r}
+
+summary (tabla_datos$var_porcentual)
+
+
+```
+
+
+<br><br><br>
+
+La variacion es enorme, desde el -82%, hasta el 2659 %.  No obstante los datos se acumulan entre el -30 y el 15% aprox.
+
+Vamos a representarlo en un histograma y un diagrama de densidad como se hizo previamente con la variacion total.
+
+```{r}
+hist(tabla_datos$var_porcentual, col = "salmon", border = "black", xlab = "Variación Porcentual de la Población", ylab = "Frecuencia", main = "Histograma de Variación Porcentual de la Población")
+
+```
+<br><br><br>
+
+Repetimos con la densidad
+
+
+```{r}
+
+
+
+densidad <- density(tabla_datos$var_porcentual)    #REQUIERE QUE SEA NUMERIC Y NO ROUND
+
+plot(densidad, col = "blue", main = "Diagrama de Densidad de Variación Porcentual de Población")
+
+```
+<br><br><br>
+
+En una presentacion real ajustariamos un poco mas las etiquetas en el eje X e Y. ("density" lo pondriamos en español, etc).
+
+
+Por lo demas, vamos examinar los 10 municipios que mas poblacion  ganan porcentualmente.
+
+Lo haremos en una tabla corta diferente a la anterior 
+
+
+```{r}
+
+tabla_corta_porcent<- tabla_datos[, c("NOMBRE", "PROVINCIA", "var_porcentual")]
+tabla_corta_porcent <- tabla_corta_porcent[order(-tabla_datos$var_porcentual), ]
+head(tabla_corta_porcent, 10)
+
+```
+
+
+<br><br><br>
+
+
+Repetimos para los que mas poblacion pierden porcentualmente.
+
+
+```{r}
+
+
+tail(tabla_corta_porcent, 10)
+
+```
+  
+ 
+<br><br><br>
+Vamos a crear una tabla con 2 columnas:  los 10 municipios que mas poblacion pierden, y los 10 que mas porcentaje pierden.
+
+
+```{r}
+
+pierden_mas_poblacion<-tail(tabla_corta$NOMBRE, 10)
+pierden_mas_porcentaje<-tail(tabla_corta_porcent$NOMBRE, 10)
+
+poblacion_perdida <- cbind (pierden_mas_poblacion, pierden_mas_porcentaje )
+print (poblacion_perdida)
+
+```
+
+<br><br><br>
+Como vemos no coinciden.
+
+Podriamos si quisieramos repetirlo para los que mas ganan.
+
+
+
+
+<br><br><br>
+
+### PASO 4
+
+Vamos a intentar realizar una representacion grafica de la variacion de la poblacion por provincias sobre un mapa.
+
+En un caso real podriamos y deberiamos repetir el analisis anterior pero por provincias.  No vamos a hacerlo.
+
+Solo vamos a representar visualmente la variacion por provincias sobre un mapa.
+
+
+Lo primero sera hacer una nueva tabla y quedarnos solo con las columnas de Provincia, Poblacion en el año 01, poblacion en el año 21,  variacion de poblacion y luego  sumar los diferentes datos de cada provincia que pertenecian a los diferentes municipios para obtener el total de la provincia, que sera el dato que nos quedaremos.
+
+
+<br><br><br>
+
+
+```{r}
+
+tabla_provincias <- tabla_datos[, c("PROVINCIA","POB01", "POB21","IncrementoPOB")]
+
+tabla_provincias <- aggregate(. ~ PROVINCIA, data = tabla_provincias, FUN = sum)
+
+summary (tabla_provincias)
+
+
+```
+
+
+<br><br><br>
+Vemos que nos da 51 provincias.  Revisando la tabla vemos que esto se debe a que no tenemos los datos de la Rioja.
+
+
+#### VEASE EL README  SOBRE LOS DATOS CON LOS QUE ESTAMOS TRABAJANDO, Y QUE EN LA LIMPIEZA SE TOMARON DECISIONES POR MOTIVOS DE SIMPLICIDAD Y DIDACTICA QUE EN UN CASO REAL PODRIAN AFECTAR Y SERIAN DISCUTIBLES. AQUI TENEMOS UN EJEMPLO.
+
+
+En principio, no meteremos datos extra para La Rioja. La representacion deberia dejarla en blanco.
+
+
+Por lo demas, proseguiremos cargando el archivo shp.
+
+```{r}
+
+mapa <- st_read("C:/espacior/mapa/provincias/shapefiles_provincias_espana.shp")
+
+
+
+```
+
+
+<br><br><br>
+
+Comprobamos si la nomenclatura de las provincias coincide en el mapa y en nuestra tabla.
+
+
+```{r}
+
+diferencias<-setdiff(tabla_provincias$PROVINCIA, mapa$texto)
+print (diferencias)
+
+```
+<br><br><br>
+Observamos que hay 18 diferencias.
+
+No obstante observamos que el mapa también nombra las provincias por su código.
+
+En los datos iniciales teniamos ese código, asi que iniciaremos el proceso de nuevo, añadiendo la columna CODIGO.
+
+
+PODRIAMOS HABER OBVIADO ESTO Y PONER SOLO EL ANALISIS "BONITO", BORRANDO EL SCRIPT Y AÑADIENDO LA COLUMNA CODIGO DESDE UN INICIO, PERO QUEREMOS REFLEJAR LO QUE PUEDE SUCEDER EN LA REALIDAD.  QUE NO LO VEAMOS EN UN INICIO Y HAYA QUE MODIFICAR LO YA HECHO.
+
+
+Repetiremos los pasos dados, incluyendo la nueva columna, y con pequeñas variaciones (Sumaremos la población de cada municipio, pero obviamente no sumaremos el código, p ej.)
+
+
+
+```{r}
+
+tabla_provincias <- tabla_datos[, c("PROVINCIA","POB01", "POB21","IncrementoPOB","CPRO01")]
+
+tabla_provincias <-  aggregate(. ~ PROVINCIA + CPRO01, data = tabla_provincias, FUN = sum)
+
+
+summary (tabla_provincias)
+
+
+```
+
+
+<br><br><br>
+
+
+Vamos a ponerle un nombre mas simple y descriptivo a esa columna. Usaremos el mismo de la tabla mapa, lo que facilitara aun mas su comprensión.
+
+
+```{r}
+
+colnames(tabla_provincias)[colnames(tabla_provincias) == "CPRO01"] <- "codigo"
+
+```
+
+
+<br><br><br>
+
+Para representar los datos en el mapa, debemos unir la tabla con los datos, con la tabla que contiene los datos del archivo el shp.
+
+lo haremos uniendo las filas con el mismo codigo de provincia en cada tabla.
+
+
+```{r}
+
+colnames(tabla_provincias)[colnames(tabla_provincias) == "CPRO01"] <- "codigo"
+tabla_grafico <- merge(mapa, tabla_provincias, by.x = "codigo", by.y = "codigo", all.x = TRUE)
+
+View (tabla_grafico)  # Esto lo podemos realizar en R studio solo como comprobacion, sin ponerlo en el codigo final.                       # Lo mostramos por que vemos un problema que vamos a corregir 
+
+```
+
+
+<br><br><br>
+Si examinamos la nueva tabla vemos que los 10 primeros valores,nos da NA en algunas columnas.  Eso es por que el codigo no es exactamente el mismo en ambas columnas.  En una es 1, 2, 3 etc y en otra 01,02,03...  vamos a corregirlo, y repetir el merge.
+
+
+
+```{r}
+
+mapa$codigo<- as.numeric(mapa$codigo)
+mapa$codigo[1:9] <-c(1:9)
+tabla_grafico <- merge(mapa, tabla_provincias, by.x = "codigo", by.y = "codigo", all.x = TRUE)
+
+```
+
+
+<br><br><br>
+Ahora vamos con la representacion gráfica.
+
+```{r}
+ggplot() +
+  geom_sf(data = tabla_grafico, aes(fill = IncrementoPOB)) +
+  scale_fill_gradient(name = "Incremento/Decremento de Población",
+                      low = "red", high = "green") +
+  labs(title = "Mapa de Incremento/Decremento de Población por Provincia")
+
+```
+
+
+<br><br><br>
+Lo anterior ya seria correcto, pero vamos a jugar un poco para hacer cosas como cambiarle el color para lograr un mejor contraste.
+
+Morado y naranja son los colores que dan menos problemas de vision a los daltonicos
+
+```{r}
+ggplot() +
+  geom_sf(data = tabla_grafico, aes(fill = IncrementoPOB)) +
+  scale_fill_gradient(name = "Incremento/Decremento de Población",
+                      low = "purple", high = "orange") +
+  labs(title = "Mapa de Incremento/Decremento de Población por Provincia")
+
+
+```
+<br><br><br>
+
+Con estos colores ademas de dar menos problemas a los daltonicos, el gradiente se diferencia mejor. (Puede ser opinion personal)
+
+Vamos a darle un poco mas de contraste a la provincia sin datos, y añadirlo en la leyenda.
+
+
+```{r}
+
+
+ggplot() +
+  geom_sf(data = tabla_grafico, aes(fill = IncrementoPOB)) +
+  scale_fill_gradient(name = "Incremento/Decremento de Población",
+                      low = "purple", high = "orange",
+                      na.value = "grey") +
+  labs(title = "Mapa de Incremento/Decremento de Población por Provincia",
+       subtitle = "Sin datos para la provincia de La Rioja") +
+  guides(fill = guide_colorbar(title = "Incremento/Decremento de Población"))
+
+
+```
+
+
+
+<br><br><br>
+
+
+La representacion gráfica puede variarse y añadirle todos los detalles que se quieran, pero creemos que ya es suficiente.
+
+Tras todo esto, podriamos usar algun comando como ggsave para guardar el gráfico.  Tiene sentido si se trabajase con datos muy variables y se quisiese automatizar algo, etc.
+
+Pero para un analisis simple como este la realidad es que basta con click derecho sobre el gráfico, y "guardar como".
+
+
+
