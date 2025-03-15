@@ -9,7 +9,7 @@ On this file we are going to make a simple analisis of data population evolution
 We are going to use the data that we cleaned in a previous project: https://github.com/fenris123/population-data-cleaning-using-R
 
 
-WE MUST RUN THE CODE OF THAT PROJECT BEFORE AND SAVE THE TABLE "tabla_combinada" in a CSV file.
+WE MUST RUN THE CODE OF THAT PROJECT AND SAVE THE TABLE "tabla_combinada" in a CSV file.
 
 PLEASE, BE CAREFULL WITH THE FILE PATH THAT YOU SELECT.  WE SAVE IT IN C:/espacior/tabla_combinada.csv  
 If you change it, you must obviously change it in the code of  this proyect.
